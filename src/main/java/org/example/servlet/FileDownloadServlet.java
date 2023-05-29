@@ -6,9 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.service.FileService;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serial;
+import java.io.*;
 
 public class FileDownloadServlet extends HttpServlet {
     @Serial
@@ -19,8 +17,10 @@ public class FileDownloadServlet extends HttpServlet {
         FileService fileService = (FileService) getServletContext().getAttribute("fileService");
         String fileId = (String) req.getAttribute("fileId");
 
-        try (InputStream fileStream = fileService.downloadFile(fileId)) {
-            res.setHeader("Content-Disposition", "attachment; filename=" + fileId);
+        File file = fileService.getFile(fileId);
+
+        try (InputStream fileStream = new FileInputStream(file)) {
+            res.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
             res.setContentType("application/octet-stream");
 
             byte[] buffer = new byte[1024];

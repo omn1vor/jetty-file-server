@@ -15,7 +15,6 @@ import org.example.servlet.FileListServlet;
 import org.example.servlet.FileUploadServlet;
 
 import java.io.File;
-import java.io.IOException;
 
 public class JettyFileServerApp {
     public static void main(String[] args) throws Exception {

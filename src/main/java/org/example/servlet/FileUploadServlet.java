@@ -12,6 +12,7 @@ import org.example.model.FileInfo;
 import org.example.service.FileService;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serial;
 import java.util.Collection;
 
@@ -52,7 +53,15 @@ public class FileUploadServlet extends HttpServlet {
 
         Part part = parts.iterator().next();
         String fileName = part.getSubmittedFileName();
-        FileInfo fileInfo = fileService.uploadFile(part.getInputStream(), fileName);
+
+        FileInfo fileInfo;
+        try (InputStream inputStream = part.getInputStream()) {
+            fileInfo = fileService.uploadFile(inputStream, fileName);
+        } catch (IOException e) {
+            res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            res.getWriter().println("Error while trying saving the file" + e.getMessage());
+            return;
+        }
 
         Gson gson = new GsonBuilder().create();
 

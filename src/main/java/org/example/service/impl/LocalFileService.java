@@ -4,52 +4,34 @@ import org.example.model.FileInfo;
 import org.example.service.FileService;
 
 import java.io.*;
-import java.util.*;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class LocalFileService implements FileService {
     private static final String UPLOAD_DIR = "uploads";
-    private static final String FILE_MAPPING_FILE  = "file_mapping.txt";
-    private final Map<String, String> fileMap;
-
-    public LocalFileService() {
-        this.fileMap = loadFileMap();
-    }
 
     @Override
-    public FileInfo uploadFile(InputStream inputStream, String fileName) {
+    public FileInfo uploadFile(InputStream inputStream, String fileName) throws IOException {
         String fileId = UUID.randomUUID().toString();
 
-        File uploadDir = new File(UPLOAD_DIR);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
-        }
-        File file = new File(uploadDir, fileId);
-
-        try (OutputStream outputStream = new FileOutputStream(file)) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
+        File idDirectory = new File(UPLOAD_DIR, fileId);
+        if (!idDirectory.exists()) {
+            if (!idDirectory.mkdirs()) {
+                throw new IOException("Could not write file due to internal error");
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
-        fileMap.put(fileId, fileName);
-        saveFileMap();
+        File file = new File(idDirectory, fileName);
+        Files.copy(inputStream, file.toPath());
 
         return new FileInfo(fileId, file.length() / 1024, fileName);
     }
 
     @Override
-    public InputStream downloadFile(String fileId) {
-        File file = new File(UPLOAD_DIR, fileId);
-
-        try {
-            return new FileInputStream(file);
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("File not found: " + fileId);
-        }
+    public File getFile(String fileId) {
+        return getFileFromIdDirectory(getIdDirectory(fileId));
     }
 
     @Override
@@ -60,41 +42,38 @@ public class LocalFileService implements FileService {
             return List.of();
         }
 
-        File[] files = uploadDir.listFiles();
+        File[] idDirectories = uploadDir.listFiles();
+
+        if (idDirectories == null) {
+            return List.of();
+        }
+
         List<FileInfo> fileList = new ArrayList<>();
 
-        if (files != null) {
-            for (File file : files) {
-                String id = file.getName();
-                String filename = fileMap.getOrDefault(file.getName(), "filename_lost_index_failure");
-                fileList.add(new FileInfo(id, file.length() / 1024, filename));
-            }
+        for (File idDirectory : idDirectories) {
+            File file = getFileFromIdDirectory(idDirectory);
+            fileList.add(new FileInfo(idDirectory.getName(), file.length() / 1024, file.getName()));
         }
         return fileList;
     }
 
-    private Map<String, String> loadFileMap() {
-        File file = new File(FILE_MAPPING_FILE);
+    private File getFileFromIdDirectory(File idDirectory) {
+        File[] files = idDirectory.listFiles();
 
-        if (!file.exists()) {
-            return new HashMap<>();
+        if (files == null || files.length == 0) {
+            throw new IllegalArgumentException("File not found: " + idDirectory.getName());
         }
 
-        try (FileInputStream fis = new FileInputStream(file);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-            return (Map<String, String>) ois.readObject();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        return files[0];
     }
 
-    private void saveFileMap() {
-        try (FileOutputStream fos = new FileOutputStream(FILE_MAPPING_FILE);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(fileMap);
-        } catch (IOException e) {
-            e.printStackTrace();
+    private File getIdDirectory(String fileId) {
+        File directory = new File(UPLOAD_DIR, fileId);
+
+        if (!directory.exists() || !directory.isDirectory()) {
+            throw new IllegalArgumentException("File not found: " + fileId);
         }
+
+        return directory;
     }
 }
