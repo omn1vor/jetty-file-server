@@ -27,7 +27,7 @@ public class FileUploadServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
-        Collection<Part> parts = null;
+        Collection<Part> parts;
 
         try {
             parts = req.getParts();
@@ -53,6 +53,12 @@ public class FileUploadServlet extends HttpServlet {
 
         Part part = parts.iterator().next();
         String fileName = part.getSubmittedFileName();
+
+        if (!fileName.matches(".+\\.(txt|csv)$")) {
+            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            res.getWriter().println("Only txt or csv files are supported");
+            return;
+        }
 
         FileInfo fileInfo;
         try (InputStream inputStream = part.getInputStream()) {
