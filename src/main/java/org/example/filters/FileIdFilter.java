@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class FileIdFilter implements Filter {
-    private static final String idPattern = "[a-zA-Z0-9-]+";
+    private static final String ID_PATTERN = "[a-zA-Z0-9-]+";
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -18,7 +18,7 @@ public class FileIdFilter implements Filter {
 
         String pathInfo = req.getPathInfo();
 
-        if (pathInfo == null || !pathInfo.matches("/" + idPattern)) {
+        if (pathInfo == null || !pathInfo.matches("/" + ID_PATTERN)) {
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
