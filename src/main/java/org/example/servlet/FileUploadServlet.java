@@ -2,12 +2,13 @@ package org.example.servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
+import org.example.exception.FileServiceException;
+import org.example.exception.WrongFileSentException;
 import org.example.model.FileInfo;
 import org.example.service.FileService;
 
@@ -25,28 +26,22 @@ public class FileUploadServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
 
         Collection<Part> parts;
 
         try {
             parts = req.getParts();
         } catch (Exception e) {
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            res.getWriter().println(e.getMessage());
-            return;
+            throw new WrongFileSentException(e.getMessage());
         }
 
         if (parts.size() == 0) {
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            res.getWriter().println("No files sent");
-            return;
+            throw new WrongFileSentException("No files sent");
         }
 
         if (parts.size() > 1) {
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            res.getWriter().println("Only one file per form is supported");
-            return;
+            throw new WrongFileSentException("Only one file per form is supported");
         }
 
         FileService fileService = (FileService) getServletContext().getAttribute("fileService");
@@ -55,18 +50,14 @@ public class FileUploadServlet extends HttpServlet {
         String fileName = part.getSubmittedFileName();
 
         if (!fileName.matches(".+\\.(txt|csv)$")) {
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            res.getWriter().println("Only txt or csv files are supported");
-            return;
+            throw new WrongFileSentException("Only txt or csv files are supported");
         }
 
         FileInfo fileInfo;
         try (InputStream inputStream = part.getInputStream()) {
             fileInfo = fileService.uploadFile(inputStream, fileName);
         } catch (IOException e) {
-            res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            res.getWriter().println("Error while trying saving the file" + e.getMessage());
-            return;
+            throw new FileServiceException("Error while trying saving the file" + e.getMessage());
         }
 
         Gson gson = new GsonBuilder().create();

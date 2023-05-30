@@ -7,7 +7,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.example.filters.FileIdFilter;
+import org.example.exception.FileServiceException;
+import org.example.filter.ExceptionFilter;
+import org.example.filter.FileIdFilter;
 import org.example.service.FileService;
 import org.example.service.impl.LocalFileService;
 import org.example.servlet.FileDownloadServlet;
@@ -27,6 +29,7 @@ public class JettyFileServerApp {
         contextHandler.setResourceBase(webappDir);
         contextHandler.addServlet(DefaultServlet.class, "/");
 
+        contextHandler.addFilter(ExceptionFilter.class, "/*", null);
         contextHandler.addFilter(FileIdFilter.class, "/download/*", null);
 
         contextHandler.addServlet(addMultipartConfig(FileUploadServlet.class), "/upload");
@@ -42,14 +45,15 @@ public class JettyFileServerApp {
         server.join();
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static ServletHolder addMultipartConfig(Class<? extends HttpServlet> servletClass) {
         ServletHolder servletHolder = new ServletHolder(new FileUploadServlet());
         MultipartConfigElement multipartConfig = new MultipartConfigElement(
                 servletClass.getAnnotation(MultipartConfig.class));
 
         File tempDir = new File(multipartConfig.getLocation());
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
+        if (!tempDir.exists() || !tempDir.mkdirs()) {
+            throw new FileServiceException("Failed to initialize file storage");
         }
 
         servletHolder.getRegistration().setMultipartConfig(multipartConfig);

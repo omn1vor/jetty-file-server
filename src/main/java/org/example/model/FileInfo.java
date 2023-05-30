@@ -1,11 +1,14 @@
 package org.example.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @AllArgsConstructor @NoArgsConstructor
+@Getter @Setter
 public class FileInfo {
-    String id;
-    long size;
-    String name;
+    private String id;
+    private long size;
+    private String name;
 }

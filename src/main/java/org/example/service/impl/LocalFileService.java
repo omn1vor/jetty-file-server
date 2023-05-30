@@ -1,5 +1,7 @@
 package org.example.service.impl;
 
+import org.example.exception.FileNotFoundByIdException;
+import org.example.exception.FileServiceException;
 import org.example.model.FileInfo;
 import org.example.service.FileService;
 
@@ -19,7 +21,7 @@ public class LocalFileService implements FileService {
         File idDirectory = new File(UPLOAD_DIR, fileId);
         if (!idDirectory.exists()) {
             if (!idDirectory.mkdirs()) {
-                throw new IOException("Could not write file due to internal error");
+                throw new FileServiceException("Could not write file due to internal error");
             }
         }
 
@@ -61,7 +63,7 @@ public class LocalFileService implements FileService {
         File[] files = idDirectory.listFiles();
 
         if (files == null || files.length == 0) {
-            throw new IllegalArgumentException("File not found: " + idDirectory.getName());
+            throw new FileNotFoundByIdException(idDirectory.getName());
         }
 
         return files[0];
@@ -71,7 +73,7 @@ public class LocalFileService implements FileService {
         File directory = new File(UPLOAD_DIR, fileId);
 
         if (!directory.exists() || !directory.isDirectory()) {
-            throw new IllegalArgumentException("File not found: " + fileId);
+            throw new FileNotFoundByIdException(fileId);
         }
 
         return directory;

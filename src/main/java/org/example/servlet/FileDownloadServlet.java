@@ -1,19 +1,22 @@
 package org.example.servlet;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.example.exception.FileServiceException;
 import org.example.service.FileService;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.Serial;
 
 public class FileDownloadServlet extends HttpServlet {
     @Serial
     private static final long serialVersionUID = 1L;
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) {
         FileService fileService = (FileService) getServletContext().getAttribute("fileService");
         String fileId = (String) req.getAttribute("fileId");
 
@@ -30,8 +33,8 @@ public class FileDownloadServlet extends HttpServlet {
             }
 
             res.setStatus(HttpServletResponse.SC_OK);
-        } catch (IllegalArgumentException e) {
-            res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        } catch (Exception e) {
+            throw new FileServiceException(e.getMessage());
         }
     }
 }
