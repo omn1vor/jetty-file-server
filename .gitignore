@@ -4,7 +4,6 @@ target/
 !**/src/test/**/target/
 
 /uploads
-file_mapping.txt
 
 ### IntelliJ IDEA ###
 .idea
